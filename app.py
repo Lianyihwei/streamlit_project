@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import talib
+import pandas_ta as ta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
@@ -13,18 +13,19 @@ option = st.selectbox("Which Dashboard", ("Stock Chart", "More Information"), 0)
 def get_price(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)
     df = ticker.history(period="10y", interval="1d")
-    df['MA20'] = talib.SMA(df['Close'], 20)
-    df['MA60'] = talib.SMA(df['Close'], 60)
-    df['MA120'] = talib.SMA(df['Close'], 120)
-    df['MA240'] = talib.SMA(df['Close'], 240)
-    macd, macds, macdh = talib.MACD(df.Close, fastperiod=12, slowperiod=26, signalperiod=9)
-    df['rsi'] = talib.RSI(df.Close, timeperiod=14)
-    slowk, slowd = talib.STOCH(high=df.High, low=df.Low, close=df.Close)
+    df['MA20'] = ta.sma(df['Close'], 20)
+    df['MA60'] = ta.sma(df['Close'], 60)
+    df['MA120'] = ta.sma(df['Close'], 120)
+    df['MA240'] = ta.sma(df['Close'], 240)
+    macd, macds, macdh = ta.macd(df.Close, fastperiod=12, slowperiod=26, signalperiod=9)
+    df['rsi'] = ta.rsi(df.Close, timeperiod=14)
+    slowk, slowd = ta.stoch(high=df.High, low=df.Low, close=df.Close)
     df['k'] = slowk
     df['d'] = slowd
     df['macd'] = macd
     df['macds'] = macds
     df['macdh'] = macdh
+    return df
     return df
 
 df = get_price(ticker_symbol)
