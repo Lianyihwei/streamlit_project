@@ -16,19 +16,19 @@ option = c3.selectbox('展示頁面', ('基本線圖', '相關新聞', '基本�
 @st.cache
 def get_price(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)
-    df = ticker.history(period=ticker_period, interval="1d")
+    df = ticker.history(period="3y", interval="1d")
     df['MA20'] = ta.sma(df['Close'], 20)
     df['MA60'] = ta.sma(df['Close'], 60)
     df['MA120'] = ta.sma(df['Close'], 120)
     df['MA240'] = ta.sma(df['Close'], 240)
-    macd, macds, macdh = ta.macd(df.Close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd = ta.macd(df.Close, fastperiod=12, slowperiod=26, signalperiod=9)
     df['rsi'] = ta.rsi(df.Close, timeperiod=14)
-    slowk, slowd = ta.stoch(high=df.High, low=df.Low, close=df.Close)
-    df['k'] = slowk
-    df['d'] = slowd
-    df['macd'] = macd
-    df['macds'] = macds
-    df['macdh'] = macdh
+    kd = ta.stoch(high=df.High, low=df.Low, close=df.Close)
+    df['k'] = kd['STOCHk_14_3_3']
+    df['d'] = kd['STOCHd_14_3_3']
+    df['macd'] = macd['MACD_12_26_9']
+    df['macds'] = macd['MACDs_12_26_9']
+    df['macdh'] = macd['MACDh_12_26_9']
     return df
 
 df = get_price(ticker_symbol)
@@ -156,7 +156,6 @@ if option == "基本線圖":
         col1.subheader('Signal : {}'.format(round(df['macds'][-1]), 2))
         col1.subheader('MacdH : {}'.format(round(df['macdh'][-1]), 2))
         col2.plotly_chart(macd_fig, use_container_width=True)
-
         
 if option == "相關新聞":
     url = 'https://tw.news.search.yahoo.com/search;_ylt=AwrtXWrsM81i3DsACDxw1gt.;_ylc=X1MDMjExNDcwNTAwOARfcgMyBGZyA2ZpbmFuY2UEZnIyA3NiLXRvcARncHJpZANiNmdzOGlKMlNNLlh0S2ZxRUU0M0VBBG5fcnNsdAMwBG5fc3VnZwMxMARvcmlnaW4DdHcubmV3cy5zZWFyY2gueWFob28uY29tBHBvcwMwBHBxc3RyAwRwcXN0cmwDMARxc3RybAM0BHF1ZXJ5A0FBUEwEdF9zdG1wAzE2NTc2MTUzNDk-?p='+ticker_symbol+'&fr2=sb-top&fr=finance'
@@ -168,4 +167,4 @@ if option == "相關新聞":
         st.text(new['href'])
 
 if option == '基本回測分析':
-    st.subheader('建置中')
+    st.subheader('biuilding')
