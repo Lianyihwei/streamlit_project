@@ -164,7 +164,7 @@ if option == "相關新聞":
     news = soup.select('#web h4 a')
     for new in news:
         st.subheader(new.text)
-        st.text(new['href'])
+        url = new['href']
 
 if option == '基本回測分析':
     st.subheader('biuilding')
