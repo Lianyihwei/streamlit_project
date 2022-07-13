@@ -4,15 +4,19 @@ import pandas_ta as ta
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
+import requests
+from bs4 import BeautifulSoup
 
 st.set_page_config(layout="wide")
-ticker_symbol = st.text_input('Input stock symbol like AAPL or 0050.tw', value='0050.tw')
-option = st.selectbox("Which Dashboard", ("Stock Chart", "More Information"), 0)
+c1, c2, c3 = st.columns([5, 2, 2])
+ticker_symbol = c1.text_input('請輸入股票代號(台股請加.tw)  例如 AAPL or 0050.tw . Input stock symbol like AAPL or 0050.tw', value='0050.tw')
+ticker_period = c2.selectbox('下載區間', ('1y', '3y', '5y', '10y','max'), index=0)
+option = c3.selectbox('展示頁面', ('基本線圖', '相關新聞', '基本回測分析'), 0)
 
 @st.cache
 def get_price(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)
-    df = ticker.history(period="10y", interval="1d")
+    df = ticker.history(period=ticker_period, interval="1d")
     df['MA20'] = ta.sma(df['Close'], 20)
     df['MA60'] = ta.sma(df['Close'], 60)
     df['MA120'] = ta.sma(df['Close'], 120)
@@ -25,7 +29,6 @@ def get_price(ticker_symbol):
     df['macd'] = macd
     df['macds'] = macds
     df['macdh'] = macdh
-    return df
     return df
 
 df = get_price(ticker_symbol)
@@ -104,6 +107,7 @@ def get_macd_graph(df):
         margin=dict(l=20, r=20, b=20, t=20), xaxis_rangebreaks = [dict(bounds = ["sat", "mon"])]
         ))
     return fig_macd
+
 candle_fig = get_candlestick(df)
 macd_fig = get_macd_graph(df)
 rsi_fig = get_rsi_graph(df)
@@ -112,7 +116,7 @@ kd_fig = get_kd_graph(df)
 st.header(option)
 
 # option stock chart page
-if option == "Stock Chart":
+if option == "基本線圖":
     # ohlc container
     with st.container():
         last_day_close = round(float(df["Close"][-1]), 2)
@@ -120,7 +124,6 @@ if option == "Stock Chart":
         price_diff = round(float(df['Close'].diff()[-1]), 2)
         volume_diff = round(float(df['Volume'].diff()[-1]), 2)
         col1, col2, col3 = st.columns([2,2,2])
-        # col1.subheader(f"{ticker_symbol.upper()}  Candlestick Chart K線圖")
         html_str =f'''
             <h2>{ticker_symbol.upper()}</h2>
             <h3>OHLC K線圖</h3>
@@ -133,27 +136,36 @@ if option == "Stock Chart":
     # rsi container
     with st.container():
         col1, col2 = st.columns([2, 9])
-        col1.subheader('RSI CHART 14')
-        col1.text('RSI : {}'.format(round(df['rsi'][-1], 2)))
+        col1.subheader('RSI 線圖')
+        col1.subheader('RSI : {}'.format(round(df['rsi'][-1], 2)))
         col2.plotly_chart(rsi_fig, use_container_width=True)
 
     # kd container    
     with st.container():
         col1, col2 = st.columns([2, 9])
-        col1.subheader('KD CHART 9')
-        col1.text('K Value : {}'.format(round(df['k'][-1], 2)))
-        col1.text('D Value : {}'.format(round(df['d'][-1], 2)))
+        col1.subheader('KD 線圖')
+        col1.subheader('K Value : {}'.format(round(df['k'][-1], 2)))
+        col1.subheader('D Value : {}'.format(round(df['d'][-1], 2)))
         col2.plotly_chart(kd_fig, use_container_width=True)
 
     # mac container
     with st.container():
         col1, col2 = st.columns([2, 9])
-        col1.subheader('MACD CHART 12-26-9')
-        col1.text('MACD : {}'.format(round(df['macd'][-1], 2)))
-        col1.text('Signal : {}'.format(round(df['macds'][-1]), 2))
-        col1.text('MacdH : {}'.format(round(df['macdh'][-1]), 2))
+        col1.subheader('MACD 線圖')
+        col1.subheader('MACD : {}'.format(round(df['macd'][-1], 2)))
+        col1.subheader('Signal : {}'.format(round(df['macds'][-1]), 2))
+        col1.subheader('MacdH : {}'.format(round(df['macdh'][-1]), 2))
         col2.plotly_chart(macd_fig, use_container_width=True)
 
         
-if option == "More Information":
-    st.subheader("More Information")
+if option == "相關新聞":
+    url = 'https://tw.news.search.yahoo.com/search;_ylt=AwrtXWrsM81i3DsACDxw1gt.;_ylc=X1MDMjExNDcwNTAwOARfcgMyBGZyA2ZpbmFuY2UEZnIyA3NiLXRvcARncHJpZANiNmdzOGlKMlNNLlh0S2ZxRUU0M0VBBG5fcnNsdAMwBG5fc3VnZwMxMARvcmlnaW4DdHcubmV3cy5zZWFyY2gueWFob28uY29tBHBvcwMwBHBxc3RyAwRwcXN0cmwDMARxc3RybAM0BHF1ZXJ5A0FBUEwEdF9zdG1wAzE2NTc2MTUzNDk-?p='+ticker_symbol+'&fr2=sb-top&fr=finance'
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text)
+    news = soup.select('#web h4 a')
+    for new in news:
+        st.subheader(new.text)
+        st.text(new['href'])
+
+if option == '基本回測分析':
+    st.subheader('建置中')
