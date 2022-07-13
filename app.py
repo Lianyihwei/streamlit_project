@@ -7,6 +7,7 @@ import yfinance as yf
 import requests
 from bs4 import BeautifulSoup
 
+st.header('STOCK DASHBOARD')
 st.set_page_config(layout="wide")
 c1, c2, c3 = st.columns([5, 2, 2])
 ticker_symbol = c1.text_input('請輸入股票代號(台股請加.tw)  例如 AAPL or 0050.tw . Input stock symbol like AAPL or 0050.tw', value='0050.tw')
