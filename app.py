@@ -165,6 +165,7 @@ if option == "相關新聞":
     for new in news:
         st.subheader(new.text)
         url = new['href']
+        st.write('[看新聞去](%s)' % url) 
 
 if option == '基本回測分析':
     st.subheader('biuilding')
