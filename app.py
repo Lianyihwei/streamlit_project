@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import pandas_ta as ta
+import vectorbt as vbt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
@@ -12,7 +13,7 @@ st.header('STOCK DASHBOARD')
 c1, c2, c3 = st.columns([5, 2, 2])
 ticker_symbol = c1.text_input('請輸入股票代號(台股請加.tw)  例如 AAPL or 0050.tw . Input stock symbol like AAPL or 0050.tw', value='0050.tw')
 ticker_period = c2.selectbox('下載區間', ('1y', '3y', '5y', '10y','max'), index=0)
-option = c3.selectbox('展示頁面', ('基本線圖', '相關新聞', '基本回測分析'), 0)
+option = c3.selectbox('展示頁面', ('基本K線與技術指標', '相關新聞', '技術指標回測結果'), 2)
 
 @st.cache
 def get_price(ticker_symbol):
@@ -117,9 +118,12 @@ kd_fig = get_kd_graph(df)
 st.header(option)
 
 # option stock chart page
-if option == "基本線圖":
+if option == "基本K線與技術指標":
     # ohlc container
     with st.container():
+        portfolio = vbt.Portfolio.from_signals(df['Close'])
+        total_return = (portfolio.total_return() + 1) *100
+        print(f'{total_return:.2f}' + '%')
         last_day_close = round(float(df["Close"][-1]), 2)
         last_day_volume = round(float(df["Volume"][-1]), 2)
         price_diff = round(float(df['Close'].diff()[-1]), 2)
@@ -128,7 +132,9 @@ if option == "基本線圖":
         html_str =f'''
             <h2>{ticker_symbol.upper()}</h2>
             <h3>OHLC K線圖</h3>
+            <P>{ticker_period} 期間總報酬 :{total_return:.2f} %</p>
         '''
+
         col1.markdown(html_str, unsafe_allow_html=True)
         col2.metric(f"{date} Close 收盤價", last_day_close, price_diff)
         col3.metric(f"{date} Volume 成交量", last_day_volume, volume_diff)
@@ -157,7 +163,7 @@ if option == "基本線圖":
         col1.subheader('Signal : {}'.format(round(df['macds'][-1]), 2))
         col1.subheader('MacdH : {}'.format(round(df['macdh'][-1]), 2))
         col2.plotly_chart(macd_fig, use_container_width=True)
-        
+
 if option == "相關新聞":
     url = 'https://tw.news.search.yahoo.com/search;_ylt=AwrtXWrsM81i3DsACDxw1gt.;_ylc=X1MDMjExNDcwNTAwOARfcgMyBGZyA2ZpbmFuY2UEZnIyA3NiLXRvcARncHJpZANiNmdzOGlKMlNNLlh0S2ZxRUU0M0VBBG5fcnNsdAMwBG5fc3VnZwMxMARvcmlnaW4DdHcubmV3cy5zZWFyY2gueWFob28uY29tBHBvcwMwBHBxc3RyAwRwcXN0cmwDMARxc3RybAM0BHF1ZXJ5A0FBUEwEdF9zdG1wAzE2NTc2MTUzNDk-?p='+ticker_symbol+'&fr2=sb-top&fr=finance'
     res = requests.get(url)
@@ -168,5 +174,37 @@ if option == "相關新聞":
         url = new['href']
         st.write('[看新聞去](%s)' % url) 
 
-if option == '基本回測分析':
-    st.subheader('biuilding')
+if option == '技術指標回測結果':
+    backtesting_options = st.selectbox('回測參數', ('macd', 'rsi', 'kd'), index=0)
+    if backtesting_options == 'macd':
+        st.markdown('### macd快線 往上突破 macd慢線 買入 . macd快線 往下跌穿 macd慢線 賣出')
+        entries = df['macd'] > df['macds']
+        exits = df['macd'] < df['macds']
+        pf_macd = vbt.Portfolio.from_signals(df['Close'], entries, exits)
+        html_str =f'''
+            <h4>總交易次數 : {pf_macd.stats()[11]}     勝率 : {pf_macd.stats()[15]:.2f}</h4>
+        '''
+        st.markdown(html_str, unsafe_allow_html=True)
+        st.plotly_chart(pf_macd.plot(), use_container_width=True)
+
+    if backtesting_options == 'rsi':
+        st.markdown('### rsi < 30 買入 . rsi > 70 賣出')
+        entries = df['rsi'] < 30
+        exits = df['rsi'] > 70
+        pf_rsi = vbt.Portfolio.from_signals(df['Close'], entries, exits)
+        html_str =f'''
+            <h4>總交易次數 : {pf_rsi.stats()[11]}     勝率 : {pf_rsi.stats()[15]:.2f}%</h4>
+        '''
+        st.markdown(html_str, unsafe_allow_html=True)
+        st.plotly_chart(pf_rsi.plot(), use_container_width=True)
+    
+    if backtesting_options == 'kd':
+        st.markdown('### k線 往上突破 d線 買入 . k線 往下跌穿 d線 賣出')
+        entries = df['k'] > df['d']
+        exits = df['k'] < df['d']
+        pf_kd = vbt.Portfolio.from_signals(df['Close'], entries, exits)
+        html_str =f'''
+            <h4>總交易次數 : {pf_kd.stats()[11]}     勝率 : {pf_kd.stats()[15]:.2f}%</h4>
+        '''
+        st.markdown(html_str, unsafe_allow_html=True)
+        st.plotly_chart(pf_kd.plot(), use_container_width=True)
