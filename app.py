@@ -13,7 +13,7 @@ st.header('STOCK DASHBOARD')
 c1, c2, c3 = st.columns([5, 2, 2])
 ticker_symbol = c1.text_input('請輸入股票代號(台股請加.tw)  例如 AAPL or 0050.tw . Input stock symbol like AAPL or 0050.tw', value='0050.tw')
 ticker_period = c2.selectbox('下載區間', ('1y', '3y', '5y', '10y','max'), index=0)
-option = c3.selectbox('展示頁面', ('基本K線與技術指標', '相關新聞', '技術指標回測結果'), 0)
+option = c3.selectbox('展示頁面', ('基本K線與技術指標', '相關新聞', '技術指標回測結果'), 2)
 
 @st.cache
 def get_price(ticker_symbol):
