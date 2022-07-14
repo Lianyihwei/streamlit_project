@@ -8,4 +8,4 @@ vectorbt>=0.21.0
 yfinance>=0.1.62
 beautifulsoup4
 requests
-cffi==1.15.1
+cffi==1.15.0
