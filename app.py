@@ -13,12 +13,12 @@ st.header('STOCK DASHBOARD')
 c1, c2, c3 = st.columns([5, 2, 2])
 ticker_symbol = c1.text_input('請輸入股票代號(台股請加.tw)  例如 AAPL or 0050.tw . Input stock symbol like AAPL or 0050.tw', value='0050.tw')
 ticker_period = c2.selectbox('下載區間', ('1y', '3y', '5y', '10y','max'), index=0)
-option = c3.selectbox('展示頁面', ('基本K線與技術指標', '相關新聞', '技術指標回測結果'), 2)
+option = c3.selectbox('展示頁面', ('基本K線與技術指標', '相關新聞', '技術指標回測結果'), 0)
 
 @st.cache
 def get_price(ticker_symbol):
     ticker = yf.Ticker(ticker_symbol)
-    df = ticker.history(period="3y", interval="1d")
+    df = ticker.history(period=ticker_period, interval="1d")
     df['MA20'] = ta.sma(df['Close'], 20)
     df['MA60'] = ta.sma(df['Close'], 60)
     df['MA120'] = ta.sma(df['Close'], 120)
@@ -121,8 +121,8 @@ st.header(option)
 if option == "基本K線與技術指標":
     # ohlc container
     with st.container():
-        portfolio = vbt.Portfolio.from_signals(df['Close'])
-        total_return = (portfolio.total_return() + 1) *100
+        portfolio = df['Close'][-1] - df['Close'][0]
+        total_return = (portfolio / df['Close'][0]) *100
         print(f'{total_return:.2f}' + '%')
         last_day_close = round(float(df["Close"][-1]), 2)
         last_day_volume = round(float(df["Volume"][-1]), 2)
@@ -132,7 +132,7 @@ if option == "基本K線與技術指標":
         html_str =f'''
             <h2>{ticker_symbol.upper()}</h2>
             <h3>OHLC K線圖</h3>
-            <P>{ticker_period} 期間總報酬 :{total_return:.2f} %</p>
+            <P>{ticker_period} 期間總報酬 : {total_return:.2f} %</p>
         '''
 
         col1.markdown(html_str, unsafe_allow_html=True)
